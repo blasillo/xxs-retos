@@ -1,0 +1,30 @@
+module.exports = {
+  render: function(payload) {
+    // Filtro: eliminar la palabra "script" (case insensitive)
+    const filtered = payload.replace(/script/gi, '');
+    
+    return `
+<h1>Nivel 4 - Filtro Script</h1>
+<p>El payload se filtra de forma incorrecta.</p>
+<form action="/nivel4" method="get">
+  <input name="payload" type="text" placeholder="Introduce tu nombre">
+  <button>Enviar</button>
+  <button type="button" onclick="verificar()">Verificar XSS</button>
+</form>
+<div>${filtered ? '<h3>Hola ' + filtered + '</h3>' : ''}</div>
+<div id="confirmxss"></div>
+<script>
+function verificar(){
+  var p=new URLSearchParams(location.search).get('payload');
+  if(!p)return alert('No hay payload');
+  document.getElementById('confirmxss').innerHTML='Verificando...';
+  fetch('/check',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({payload:p,code:'d4k7p2'})})
+  .then(r=>r.json())
+  .then(d=>{
+    document.getElementById('confirmxss').innerHTML=d.success?'<div class="success">✅ XSS Exitoso!<br>FLAG: <code>'+d.flag+'</code></div>':'❌ No se detectó XSS';
+  });
+}
+</script>
+    `;
+  }
+};
