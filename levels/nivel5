@@ -1,0 +1,33 @@
+module.exports = {
+  render: function(payload) {
+    return `
+<h1>Nivel 5 - DOM innerHTML</h1>
+<p>El payload se inserta usando DOM manipulation con innerHTML.</p>
+<form action="/nivel5" method="get">
+  <input name="payload" type="text" placeholder="Introduce tu nombre">
+  <button>Enviar</button>
+  <button type="button" onclick="verificar()">Verificar XSS</button>
+</form>
+<br>
+<h3>Hola <span class="nombre"></span></h3>
+
+<script>
+  document.getElementsByClassName('nombre')[0].innerHTML='${payload}';
+</script>
+
+<div id="confirmxss"></div>
+<script>
+function verificar(){
+  var p=new URLSearchParams(location.search).get('payload');
+  if(!p)return alert('No hay payload');
+  document.getElementById('confirmxss').innerHTML='Verificando...';
+  fetch('/check',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({payload:p,code:'m8r5t1'})})
+  .then(r=>r.json())
+  .then(d=>{
+    document.getElementById('confirmxss').innerHTML=d.success?'<div class="success">✅ XSS Exitoso!<br>FLAG: <code>'+d.flag+'</code></div>':'❌ No se detectó XSS';
+  });
+}
+</script>
+    `;
+  }
+};

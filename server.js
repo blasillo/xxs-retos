@@ -10,7 +10,8 @@ const LEVELS = {
     'a7f3k9': { level: 1, flag: 'FLAG{n1v3l_1_c0mpl3t4d0_s1n_f1ltr0s}' },
     'x9m2q5': { level: 2, flag: 'FLAG{n1v3l_2_3sc4p4nd0_4ttr1but0s}' },
     'b5n8w3': { level: 3, flag: 'FLAG{n1v3l_3_t3xt4r34_3sc4p3}' },
-    'd4k7p2': { level: 4, flag: 'FLAG{n1v3l_4_byp4ss_f1ltr0_scr1pt}' }
+    'd4k7p2': { level: 4, flag: 'FLAG{n1v3l_4_byp4ss_f1ltr0_scr1pt}' },
+    'm8r5t1': { level: 5, flag: 'FLAG{n1v3l_5_d0m_1nn3rHTML}' }
   };
 
 
@@ -46,6 +47,7 @@ function renderPage(level, content) {
     <a href="/nivel2" class="${level === 2 ? 'active' : ''}">Nivel 2</a>
     <a href="/nivel3" class="${level === 3 ? 'active' : ''}">Nivel 3</a>
     <a href="/nivel4" class="${level === 4 ? 'active' : ''}">Nivel 4</a>
+    <a href="/nivel5" class="${level === 5 ? 'active' : ''}">Nivel 5</a>
   </nav>
   <main>
     ${content}
@@ -61,6 +63,8 @@ const nivel1 = require('./levels/nivel1');
 const nivel2 = require('./levels/nivel2');
 const nivel3 = require('./levels/nivel3');
 const nivel4 = require('./levels/nivel4');
+const nivel5 = require('./levels/nivel5');
+
 
 app.get('/', (req, res) => {
   res.redirect('/nivel1');
@@ -85,6 +89,11 @@ app.get('/nivel4', (req, res) => {
     const payload = req.query.payload || '';
     res.send(renderPage(4, nivel4.render(payload)));
   });
+
+app.get('/nivel5', (req, res) => {
+  const payload = req.query.payload || '';
+  res.send(renderPage(5, nivel5.render(payload)));
+});
 
 
 app.post('/check', async (req, res) => {
