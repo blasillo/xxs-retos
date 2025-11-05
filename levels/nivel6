@@ -1,0 +1,44 @@
+function sanitize(obj) {
+    if (typeof obj === 'string') {
+      return obj.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+    }
+    if (Array.isArray(obj)) return obj.map(sanitize);
+    if (obj && typeof obj === 'object') {
+      return Object.fromEntries(Object.entries(obj).map(([k, v]) => [k, sanitize(v)]));
+    }
+    return obj;
+  }
+
+module.exports = {
+  render: function(payload) {
+    const filtered = sanitize(payload);
+
+    return `
+<h1>Nivel 6 - Carga de imágenes</h1>
+<p>El payload se carga en el origen de una imagen y hay más filtros.</p>
+<form action="/nivel6" method="get">
+  <input name="payload" type="text" value="/imagenes/gato.jpg">
+  <button>Enviar</button>
+  <button type="button" onclick="verificar()">Verificar XSS</button>
+</form>
+<br>
+<div>
+<h3>Tu imagen</h3>
+<img src="${filtered}" />
+</div>
+<div id="confirmxss"></div>
+<script>
+function verificar(){
+  var p=new URLSearchParams(location.search).get('payload');
+  if(!p)return alert('No hay payload');
+  document.getElementById('confirmxss').innerHTML='Verificando...';
+  fetch('/check',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({payload:p,code:'k4wzy7'})})
+  .then(r=>r.json())
+  .then(d=>{
+    document.getElementById('confirmxss').innerHTML=d.success?'<div class="success">✅ XSS Exitoso!<br>FLAG: <code>'+d.flag+'</code></div>':'❌ No se detectó XSS';
+  });
+}
+</script>
+    `;
+  }
+};

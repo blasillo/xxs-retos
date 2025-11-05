@@ -30,6 +30,7 @@ RUN npm ci --only=production
 
 COPY server.js .
 COPY levels/ ./levels/
+COPY imagenes/ ./imagenes
 
 EXPOSE 3000
 
