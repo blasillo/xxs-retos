@@ -1,0 +1,36 @@
+module.exports = {
+  render: function(payload) {
+    // Filtro recursivo: eliminar script, onerror, onload, onmouse* (case insensitive)
+    let filtered = payload;
+    let previousFiltered = '';
+    
+    while (previousFiltered !== filtered) {
+      previousFiltered = filtered;
+      filtered = filtered.replace(/script|onerror|onload|onmouse\w*/gi, '');
+    }
+    
+    return `
+<h1>Nivel 7 - Filtro Recursivo</h1>
+<p>Se filtra la entrada eliminando lo potencialmente peligroso  </p>
+<form action="/nivel7" method="get">
+  <input name="payload" type="text" placeholder="Introduce tu nombre">
+  <button>Enviar</button>
+  <button type="button" onclick="verificar()">Verificar XSS</button>
+</form>
+<div>${filtered ? '<h3>Hola ' + filtered + '</h3>' : ''}</div>
+<div id="confirmxss"></div>
+<script>
+function verificar(){
+  var p=new URLSearchParams(location.search).get('payload');
+  if(!p)return alert('No hay payload');
+  document.getElementById('confirmxss').innerHTML='Verificando...';
+  fetch('/check',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({payload:p,code:'q3v9h7'})})
+  .then(r=>r.json())
+  .then(d=>{
+    document.getElementById('confirmxss').innerHTML=d.success?'<div class="success">✅ XSS Exitoso!<br>FLAG: <code>'+d.flag+'</code></div>':'❌ No se detectó XSS';
+  });
+}
+</script>
+    `;
+  }
+};
