@@ -1,9 +1,10 @@
 module.exports = {
   render: function(payload) {
+    const escapedPayload = payload.replace(/</g, '&lt;').replace(/>/g, '&gt;');
     return `
 <h1>Nivel 2 - Atributo Value</h1>
 <p>El payload se inserta en el atributo value de un input.</p>
-<form action="/nivel2" method="get">
+<form action="/nivel2" method="post">
   <input name="payload" type="text" placeholder="Introduce tu nombre">
   <button>Enviar</button>
   <button type="button" onclick="verificar()">Verificar XSS</button>
@@ -12,10 +13,12 @@ module.exports = {
   <input type="text" value="${payload}" readonly style="width:100%;padding:8px">
 </div>
 <div id="confirmxss"></div>
+<textarea id="payload-data" style="display:none;">${escapedPayload}</textarea>
 <script>
 function verificar(){
-  var p=new URLSearchParams(location.search).get('payload');
-  if(!p)return alert('No hay payload');
+  var payloadEl = document.getElementById('payload-data');
+  var p = payloadEl ? payloadEl.value : '';
+  if(!p) return alert('No hay payload');
   document.getElementById('confirmxss').innerHTML='Verificando...';
   fetch('/check',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({payload:p,code:'x9m2q5'})})
   .then(r=>r.json())

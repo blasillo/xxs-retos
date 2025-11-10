@@ -3,17 +3,19 @@ module.exports = {
     return `
 <h1>Nivel 1 - Sin Filtros</h1>
 <p>El payload se inserta directamente en el HTML sin ninguna protección.</p>
-<form action="/nivel1" method="get">
+<form action="/nivel1" method="post">
   <input name="payload" type="text" placeholder="Introduce tu nombre">
   <button>Enviar</button>
   <button type="button" onclick="verificar()">Verificar XSS</button>
 </form>
 <div>${payload ? '<h3>Hola ' + payload + '</h3>' : ''}</div>
 <div id="confirmxss"></div>
+<div id="payload-data" style="display:none;">${payload.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
 <script>
 function verificar(){
-  var p=new URLSearchParams(location.search).get('payload');
-  if(!p)return alert('No hay payload');
+  var payloadEl = document.getElementById('payload-data');
+  var p = payloadEl ? payloadEl.textContent : '';
+  if(!p) return alert('No hay payload');
   document.getElementById('confirmxss').innerHTML='Verificando...';
   fetch('/check',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({payload:p,code:'a7f3k9'})})
   .then(r=>r.json())

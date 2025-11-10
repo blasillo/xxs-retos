@@ -12,11 +12,12 @@ function sanitize(obj) {
 module.exports = {
   render: function(payload) {
     const filtered = sanitize(payload);
+    const escapedPayload = payload.replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
     return `
 <h1>Nivel 6 - Carga de imágenes</h1>
 <p>El payload se carga en el origen de una imagen y hay más filtros.</p>
-<form action="/nivel6" method="get">
+<form action="/nivel6" method="post">
   <input name="payload" type="text" value="/imagenes/gato.jpg">
   <button>Enviar</button>
   <button type="button" onclick="verificar()">Verificar XSS</button>
@@ -27,10 +28,12 @@ module.exports = {
 <img src="${filtered}" />
 </div>
 <div id="confirmxss"></div>
+<textarea id="payload-data" style="display:none;">${escapedPayload}</textarea>
 <script>
 function verificar(){
-  var p=new URLSearchParams(location.search).get('payload');
-  if(!p)return alert('No hay payload');
+  var payloadEl = document.getElementById('payload-data');
+  var p = payloadEl ? payloadEl.value : '';
+  if(!p) return alert('No hay payload');
   document.getElementById('confirmxss').innerHTML='Verificando...';
   fetch('/check',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({payload:p,code:'k4wzy7'})})
   .then(r=>r.json())

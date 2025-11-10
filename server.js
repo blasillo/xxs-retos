@@ -21,8 +21,8 @@ const LEVELS = {
   };
 
   // Estado
-let transfers = [];
-let userEmail = 'usuario@ejemplo.com';
+//let transfers = [];
+//let userEmail = 'usuario@ejemplo.com';
 
 
 function renderPage(level, content) {
@@ -92,8 +92,19 @@ app.get('/nivel1', (req, res) => {
   res.send(renderPage(1, nivel1.render(payload)));
 });
 
+app.post('/nivel1', (req, res) => {
+  const payload = req.body.payload || '';
+  res.send(renderPage(1, nivel1.render(payload)));
+});
+
 app.get('/nivel2', (req, res) => {
   const payload = req.query.payload || '';
+  res.send(renderPage(2, nivel2.render(payload)));
+});
+
+app.post('/nivel2', (req, res) => {
+  const payload = req.body.payload || '';
+  //console.log('Payload recibido:', payload);  // <-- Agregar esto
   res.send(renderPage(2, nivel2.render(payload)));
 });
 
@@ -102,18 +113,45 @@ app.get('/nivel3', (req, res) => {
   res.send(renderPage(3, nivel3.render(payload)));
 });
 
+app.post('/nivel3', (req, res) => {
+  const payload = req.body.payload || '';
+  //console.log('Payload recibido:', payload);  // <-- Agregar esto
+  res.send(renderPage(3, nivel3.render(payload)));
+});
+
 app.get('/nivel4', (req, res) => {
     const payload = req.query.payload || '';
     res.send(renderPage(4, nivel4.render(payload)));
   });
+
+app.post('/nivel4', (req, res) => {
+  //console.log('POST recibido en nivel4');
+  //console.log('req.body:', req.body);
+  const payload = req.body.payload || '';
+  //console.log('Payload extraído:', payload);
+  res.send(renderPage(4, nivel4.render(payload)));
+});
+
 
 app.get('/nivel5', (req, res) => {
   const payload = req.query.payload || '';
   res.send(renderPage(5, nivel5.render(payload)));
 });
 
+app.post('/nivel5', (req, res) => {
+  const payload = req.body.payload || '';
+  res.send(renderPage(5, nivel5.render(payload)));
+});
+
+
 app.get('/nivel6', (req, res) => {
   const payload = req.query.payload || '';
+  res.send(renderPage(6, nivel6.render(payload)));
+});
+
+
+app.post('/nivel6', (req, res) => {
+  const payload = req.body.payload || '';
   res.send(renderPage(6, nivel6.render(payload)));
 });
 
@@ -122,35 +160,13 @@ app.get('/nivel7', (req, res) => {
   res.send(renderPage(7, nivel7.render(payload)));
 });
 
-app.get('/csrf1', (req, res) => {
-  const payload = req.query.payload || '';
-  res.send(renderPage(8, csrf1.render(payload)));
+
+app.post('/nivel7', (req, res) => {
+  const payload = req.body.payload || '';
+  res.send(renderPage(7, nivel7.render(payload)));
 });
 
 
-
-/* para la api de CSRF */
-// Endpoint vulnerable CSRF - Cambio de email
-app.post('/api/change-email', (req, res) => {
-  const { email } = req.body;
-  if (email) {
-    userEmail = email;
-    res.json({ success: true, message: `Email cambiado a ${email}` });
-  } else {
-    res.json({ success: false, message: 'Email inválido' });
-  }
-});
-
-// Endpoint vulnerable CSRF - Transferencia
-app.get('/api/transfer', (req, res) => {
-  const { to, amount } = req.query;
-  if (to && amount) {
-    transfers.push({ to, amount, timestamp: Date.now() });
-    res.json({ success: true, message: `Transferidos ${amount}€ a ${to}` });
-  } else {
-    res.json({ success: false, message: 'Parámetros inválidos' });
-  }
-});
 
 
 app.post('/check', async (req, res) => {
@@ -158,33 +174,32 @@ app.post('/check', async (req, res) => {
   if(!LEVELS[code]) return res.json({success: false});
   const {level, flag} = LEVELS[code];
 
-  if (level === 8) {
-    userEmail = 'usuario@ejemplo.com'; // Resetear email
-    let b, csrfSuccess = false;
-    try {
-      b = await puppeteer.launch({headless: 'new', args: ['--no-sandbox', '--disable-setuid-sandbox']});
-      const p = await b.newPage();
-      
-      await p.goto(payload, {waitUntil: 'networkidle0', timeout: 10000});
-      await p.waitForTimeout(2000);
-      await b.close();
-      
-      csrfSuccess = userEmail !== 'usuario@ejemplo.com';
-      
-      return res.json({success: csrfSuccess, flag: csrfSuccess ? flag : null, newEmail: userEmail});
-    } catch(e) {
-      if(b) await b.close();
-      return res.json({success: false});
-    }
-  }
-
   let b, d = false;
   try {
     b = await puppeteer.launch({headless: 'new', args: ['--no-sandbox', '--disable-setuid-sandbox']});
     const p = await b.newPage();
     p.on('dialog', async x => {d = true; await x.accept();});
-    await p.goto(`http://localhost:3000/nivel${level}?payload=${encodeURIComponent(payload)}`, {waitUntil: 'networkidle0', timeout: 10000});
-    await p.waitForTimeout(1000);
+    
+    // Navegar a la página y hacer POST con el payload
+    await p.goto(`http://localhost:3000/nivel${level}`, {waitUntil: 'networkidle0', timeout: 10000});
+    
+    // Inyectar el payload mediante evaluación en el navegador
+    await p.evaluate((payloadData) => {
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = window.location.href;
+      
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = 'payload';
+      input.value = payloadData;
+      
+      form.appendChild(input);
+      document.body.appendChild(form);
+      form.submit();
+    }, payload);
+    
+    await p.waitForTimeout(2000);
     await b.close();
     res.json({success: d, flag: d ? flag : null});
   } catch(e) {

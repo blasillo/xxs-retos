@@ -1,9 +1,10 @@
 module.exports = {
   render: function(payload) {
+    const escapedPayload = payload.replace(/</g, '&lt;').replace(/>/g, '&gt;');
     return `
 <h1>Nivel 3 - Textarea</h1>
 <p>El payload se inserta dentro de un textarea.</p>
-<form action="/nivel3" method="get">
+<form action="/nivel3" method="post">
   <input name="payload" type="text" placeholder="Introduce tu comentario">
   <button>Enviar</button>
   <button type="button" onclick="verificar()">Verificar XSS</button>
@@ -12,10 +13,12 @@ module.exports = {
   <textarea readonly style="width:100%;height:100px;padding:8px">${payload}</textarea>
 </div>
 <div id="confirmxss"></div>
+<textarea id="payload-data" style="display:none;">${escapedPayload}</textarea>
 <script>
 function verificar(){
-  var p=new URLSearchParams(location.search).get('payload');
-  if(!p)return alert('No hay payload');
+  var payloadEl = document.getElementById('payload-data');
+  var p = payloadEl ? payloadEl.value : '';
+  if(!p) return alert('No hay payload');
   document.getElementById('confirmxss').innerHTML='Verificando...';
   fetch('/check',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({payload:p,code:'b5n8w3'})})
   .then(r=>r.json())
