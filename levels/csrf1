@@ -1,0 +1,49 @@
+module.exports = {
+  render: function(payload) {
+    return `
+<h1>Nivel 8 - CSRF Básico (POST)</h1>
+<p>Simulas ser un usuario logueado. Existe un formulario para cambiar tu email que NO tiene protección CSRF.</p>
+<p><strong>Email actual:</strong> <span id="current-email">usuario@ejemplo.com</span></p>
+<p><strong>Objetivo:</strong> Crear una página maliciosa que cambie automáticamente el email del usuario.</p>
+
+<h3>Panel de Usuario (Vulnerable)</h3>
+<form action="/api/change-email" method="post">
+  <label>Nuevo Email:</label>
+  <input name="email" type="email" placeholder="nuevo@email.com" required>
+  <button>Cambiar Email</button>
+</form>
+
+<hr style="margin: 20px 0">
+
+<h3>Probar Ataque CSRF</h3>
+<form action="/csrf1" method="get">
+  <input name="payload" type="text" placeholder="URL de tu página maliciosa">
+  <button>Simular Visita</button>
+  <button type="button" onclick="verificar()">Verificar CSRF</button>
+</form>
+<div id="resultado"></div>
+<div id="confirmxss"></div>
+<script>
+var payload = new URLSearchParams(location.search).get('payload');
+if(payload) {
+  document.getElementById('resultado').innerHTML = '<p><strong>Simulando que el usuario visita la página maliciosa...</strong></p><iframe src="' + payload + '" style="width:100%;height:200px;border:1px solid #ccc;margin-top:10px"></iframe>';
+}
+function verificar(){
+  var p=new URLSearchParams(location.search).get('payload');
+  if(!p)return alert('No hay payload');
+  document.getElementById('confirmxss').innerHTML='Verificando CSRF...';
+  fetch('/check',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({payload:p,code:'f5h2m9'})})
+  .then(r=>r.json())
+  .then(d=>{
+    if(d.success) {
+      document.getElementById('current-email').textContent = d.newEmail;
+      document.getElementById('confirmxss').innerHTML='<div class="success">✅ CSRF Exitoso! Email cambiado a: ' + d.newEmail + '<br>FLAG: <code>'+d.flag+'</code></div>';
+    } else {
+      document.getElementById('confirmxss').innerHTML='❌ No se detectó cambio de email';
+    }
+  });
+}
+</script>
+    `;
+  }
+};

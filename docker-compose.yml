@@ -1,0 +1,8 @@
+version: '3.8'
+services:
+  xss-retos:
+    image: blasillo/xss-retos:latest
+    container_name: xss-retos
+    ports:
+      - "3000:3000"
+    restart: unless-stopped

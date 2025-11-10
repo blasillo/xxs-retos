@@ -15,8 +15,14 @@ const LEVELS = {
     'd4k7p2': { level: 4, flag: 'FLAG{n1v3l_4_byp4ss_f1ltr0_scr1pt}' },
     'm8r5t1': { level: 5, flag: 'FLAG{n1v3l_5_d0m_1nn3rHTML}' },
     'k4wzy7': { level: 6, flag: 'FLAG{n1v3l_6_m4st3r_xss}' },
-    'q3v9h7': { level: 7, flag: 'FLAG{n1v3l_7_f1ltr0_r3curs1v0}' }
+    'q3v9h7': { level: 7, flag: 'FLAG{n1v3l_7_f1ltr0_r3curs1v0}' },
+
+    //'f5h2m9': { level: 8, flag: 'FLAG{n1v3l_8_csrf_p0st_b4s1c0}' },
   };
+
+  // Estado
+let transfers = [];
+let userEmail = 'usuario@ejemplo.com';
 
 
 function renderPage(level, content) {
@@ -54,6 +60,7 @@ function renderPage(level, content) {
     <a href="/nivel5" class="${level === 5 ? 'active' : ''}">Nivel 5</a>
     <a href="/nivel6" class="${level === 6 ? 'active' : ''}">Nivel 6</a>
     <a href="/nivel7" class="${level === 7 ? 'active' : ''}">Nivel 7</a>
+    <!--a href="/csrf1" class="${level === 8 ? 'active' : ''}">CSRF 1</a -->
   </nav>
   <main>
     ${content}
@@ -72,6 +79,8 @@ const nivel4 = require('./levels/nivel4');
 const nivel5 = require('./levels/nivel5');
 const nivel6 = require('./levels/nivel6');
 const nivel7 = require('./levels/nivel7');
+
+//const csrf1 = require('./levels/csrf1');
 
 
 app.get('/', (req, res) => {
@@ -113,11 +122,62 @@ app.get('/nivel7', (req, res) => {
   res.send(renderPage(7, nivel7.render(payload)));
 });
 
+app.get('/csrf1', (req, res) => {
+  const payload = req.query.payload || '';
+  res.send(renderPage(8, csrf1.render(payload)));
+});
+
+
+
+/* para la api de CSRF */
+// Endpoint vulnerable CSRF - Cambio de email
+app.post('/api/change-email', (req, res) => {
+  const { email } = req.body;
+  if (email) {
+    userEmail = email;
+    res.json({ success: true, message: `Email cambiado a ${email}` });
+  } else {
+    res.json({ success: false, message: 'Email inválido' });
+  }
+});
+
+// Endpoint vulnerable CSRF - Transferencia
+app.get('/api/transfer', (req, res) => {
+  const { to, amount } = req.query;
+  if (to && amount) {
+    transfers.push({ to, amount, timestamp: Date.now() });
+    res.json({ success: true, message: `Transferidos ${amount}€ a ${to}` });
+  } else {
+    res.json({ success: false, message: 'Parámetros inválidos' });
+  }
+});
+
 
 app.post('/check', async (req, res) => {
   const {payload, code} = req.body;
   if(!LEVELS[code]) return res.json({success: false});
   const {level, flag} = LEVELS[code];
+
+  if (level === 8) {
+    userEmail = 'usuario@ejemplo.com'; // Resetear email
+    let b, csrfSuccess = false;
+    try {
+      b = await puppeteer.launch({headless: 'new', args: ['--no-sandbox', '--disable-setuid-sandbox']});
+      const p = await b.newPage();
+      
+      await p.goto(payload, {waitUntil: 'networkidle0', timeout: 10000});
+      await p.waitForTimeout(2000);
+      await b.close();
+      
+      csrfSuccess = userEmail !== 'usuario@ejemplo.com';
+      
+      return res.json({success: csrfSuccess, flag: csrfSuccess ? flag : null, newEmail: userEmail});
+    } catch(e) {
+      if(b) await b.close();
+      return res.json({success: false});
+    }
+  }
+
   let b, d = false;
   try {
     b = await puppeteer.launch({headless: 'new', args: ['--no-sandbox', '--disable-setuid-sandbox']});
