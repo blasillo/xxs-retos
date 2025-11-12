@@ -4,5 +4,12 @@ services:
     image: blasillo/xss-retos:latest
     container_name: xss-retos
     ports:
-      - "3000:3000"
+      - "80:3000"
+    restart: unless-stopped
+
+  web:
+    container_name: whereismywebshell
+    image: blasillo/whereismywebshell:latest
+    ports:
+      - "8080:80"
     restart: unless-stopped
